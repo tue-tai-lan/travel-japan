@@ -52,6 +52,29 @@ export default function App() {
   const [exchangeRate, setExchangeRate] = useState<number>(0.21);
   const [jpyAmount, setJpyAmount] = useState<string>('10000');
   const [twdAmount, setTwdAmount] = useState<string>('2100');
+  const [isFetchingRate, setIsFetchingRate] = useState<boolean>(false);
+  const [rateUpdatedTime, setRateUpdatedTime] = useState<string>('');
+
+  const fetchLiveExchangeRate = async () => {
+    setIsFetchingRate(true);
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/JPY');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.rates && data.rates.TWD) {
+          const rate = Number(data.rates.TWD);
+          setExchangeRate(rate);
+          setTwdAmount((Number(jpyAmount || '10000') * rate).toFixed(0));
+          const now = new Date();
+          setRateUpdatedTime(now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }));
+        }
+      }
+    } catch (err) {
+      console.warn('Unable to fetch live exchange rate, using fallback rate:', err);
+    } finally {
+      setIsFetchingRate(false);
+    }
+  };
 
   // Mobile optimization states
   const [selectedDayTab, setSelectedDayTab] = useState<number>(0); // 0 = All Days, 1 = Day 1, etc.
@@ -84,6 +107,9 @@ export default function App() {
         setUsjCompleted(JSON.parse(savedUsj));
       } catch (e) {}
     }
+
+    // Fetch live currency rate on mount
+    fetchLiveExchangeRate();
   }, []);
 
   // Countdown timer logic
@@ -1039,7 +1065,15 @@ export default function App() {
             <div className="bg-white border border-[#dfe3e9] rounded-lg p-6 lg:col-span-5 shadow-sm">
               <h4 className="font-serif font-black text-base text-ai tracking-wider pb-3 border-b-2 border-shu mb-4 flex justify-between items-center">
                 <span>日幣/台幣 即時換算</span>
-                <RefreshCw className="w-4 h-4 text-shu animate-spin-slow" />
+                <button
+                  onClick={fetchLiveExchangeRate}
+                  disabled={isFetchingRate}
+                  title="重新抓取最新匯率"
+                  className="p-1 rounded hover:bg-gray-100 text-shu transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 text-xs font-sans font-normal cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isFetchingRate ? 'animate-spin' : ''}`} />
+                  <span className="text-[11px] text-gray-500 hidden sm:inline">重新整理</span>
+                </button>
               </h4>
 
               <div className="flex flex-col gap-4">
@@ -1075,20 +1109,16 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-gray-100">
-                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
-                    <span>1 JPY = {exchangeRate} TWD</span>
-                    <span className="text-shu">自訂滑桿調節</span>
+                <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-700">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                    <span>當前即時匯率：1 JPY ≈ {exchangeRate.toFixed(4)} TWD</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0.18"
-                    max="0.25"
-                    step="0.005"
-                    value={exchangeRate}
-                    onChange={(e) => handleRateChange(parseFloat(e.target.value))}
-                    className="w-full accent-shu h-1.5 bg-gray-200 rounded-lg cursor-pointer mt-2"
-                  />
+                  {rateUpdatedTime && (
+                    <span className="text-[10px] text-gray-400 font-normal">
+                      更新於 {rateUpdatedTime}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1103,10 +1133,10 @@ export default function App() {
                 </h4>
                 <ul className="text-xs sm:text-sm text-[#4b5563] space-y-2.5 list-disc pl-4">
                   <li>
-                    <strong>阿姨友人九人座車：</strong> 單趟僅 <strong>¥22,000 日幣</strong>，全家直達不折騰，分攤下來最實惠！極度推薦。
+                    <strong>Kkday 包車方案（第一首選）：</strong> 平均一人約 <strong>$350 台幣</strong>。
                   </li>
                   <li>
-                    <strong>Kkday 包車方案：</strong> 平均一人約 <strong>$350 台幣</strong>。
+                    <strong>阿姨友人九人座車：</strong> 單趟 <strong>¥22,000 日幣</strong>，全家直達不折騰。
                   </li>
                   <li>
                     <strong>機場大巴接駁：</strong> 最省，但下車後需要步行一公里拖著大件行李比較吃力。
