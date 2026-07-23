@@ -1,6 +1,0 @@
-{
-  "name": "2026 Osaka & Kyoto Family Itinerary",
-  "description": "極簡蘋果風格的 2026 關西家族旅遊行程書，圖文並茂，提供每日詳細行程、地圖超連結與願望清單。",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
